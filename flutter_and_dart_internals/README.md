@@ -31,3 +31,5 @@ numbers = [1, 2];
 ```
 
 Já o código acima geraria um erro, pois estamos atribuindo um novo valor para uma variável final.
+
+![1694901102711](image/README/1694901102711.png)
