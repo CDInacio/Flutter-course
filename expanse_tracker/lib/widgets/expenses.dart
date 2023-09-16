@@ -1,4 +1,5 @@
 import 'package:expanse_tracker/models/expense.dart';
+import 'package:expanse_tracker/widgets/chart/chart.dart';
 import 'package:expanse_tracker/widgets/expenses_list/expenses_list.dart';
 import 'package:expanse_tracker/widgets/new_expense.dart';
 import 'package:flutter/material.dart';
@@ -24,12 +25,58 @@ class _ExpensesState extends State<Expenses> {
         category: Category.leisure),
   ];
 
+  void _addExpense(Expense expense) {
+    setState(() {
+      _registeredExpenses.add(expense);
+    });
+  }
+
   void _openAddModalOverlay() {
-    showModalBottomSheet(context: context, builder: (ctx) => NewExpense());
+    showModalBottomSheet(
+        useSafeArea: true,
+        isScrollControlled: true,
+        context: context,
+        builder: (ctx) => NewExpense(
+              onAddExpense: _addExpense,
+            ));
+  }
+
+  void _removeExpense(Expense expense) {
+    final expenseId = _registeredExpenses.indexOf(expense);
+
+    setState(() {
+      _registeredExpenses.remove(expense);
+    });
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: const Duration(seconds: 3),
+      content: const Text('Expense deleted'),
+      action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            setState(() {
+              _registeredExpenses.insert(expenseId, expense);
+            });
+          }),
+    ));
   }
 
   @override
   Widget build(context) {
+    final width = MediaQuery.of(context)
+        .size
+        .width; // find out how much width we have avaliable
+
+    Widget mainContent = _registeredExpenses.isNotEmpty
+        ? ExpensesList(
+            expenses: _registeredExpenses,
+            onRemoveExpense: _removeExpense,
+          )
+        : const Center(
+            child: Text('No expenses found!'),
+          );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter ExpenseTracker'),
@@ -38,10 +85,15 @@ class _ExpensesState extends State<Expenses> {
               onPressed: _openAddModalOverlay, icon: const Icon(Icons.add))
         ],
       ),
-      body: Column(children: [
-        Text('data'),
-        Expanded(child: ExpensesList(expenses: _registeredExpenses)),
-      ]),
+      body: width < 600
+          ? Column(children: [
+              Chart(expenses: _registeredExpenses),
+              Expanded(child: mainContent),
+            ])
+          : Row(children: [
+              Expanded(child: Chart(expenses: _registeredExpenses)),
+              Expanded(child: mainContent),
+            ]),
     );
   }
 }
