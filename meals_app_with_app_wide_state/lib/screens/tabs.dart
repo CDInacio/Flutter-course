@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:meals_app_with_app_wide_state/data/dummy_data.dart';
-import 'package:meals_app_with_app_wide_state/models/meal.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:meals_app_with_app_wide_state/providers/favorites_provider.dart';
+import 'package:meals_app_with_app_wide_state/providers/meals_provider.dart';
 import 'package:meals_app_with_app_wide_state/screens/categories.dart';
 import 'package:meals_app_with_app_wide_state/screens/filters.dart';
 import 'package:meals_app_with_app_wide_state/screens/meals.dart';
@@ -13,39 +14,18 @@ const kInitialFilters = {
   Filter.vegan: false
 };
 
-class TabsScreen extends StatefulWidget {
+class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key});
 
   @override
-  State<TabsScreen> createState() => _TabsScreen();
+  ConsumerState<TabsScreen> createState() => _TabsScreen();
 }
 
-class _TabsScreen extends State<TabsScreen> {
+class _TabsScreen extends ConsumerState<TabsScreen> {
   int selectedPageIndex = 0;
-  final List<Meal> _favoriteMeals = [];
   Map<Filter, bool> _selectedFilters = kInitialFilters;
 
-  void _showInfoMessage(String message) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _toggleMealFavoriteStatus(Meal meal) {
-    final isExisting = _favoriteMeals.contains(meal);
-
-    if (isExisting) {
-      setState(() {
-        _favoriteMeals.remove(meal);
-      });
-      _showInfoMessage('Meal is no longe a favorite');
-    } else {
-      setState(() {
-        _favoriteMeals.add(meal);
-        _showInfoMessage('Marked as a favorite');
-      });
-    }
-  }
+  void _showInfoMessage(String message) {}
 
   void _selectPage(int index) {
     setState(() => selectedPageIndex = index);
@@ -71,7 +51,10 @@ class _TabsScreen extends State<TabsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final avaliableMeals = dummyMeals.where((meal) {
+    // this listener will re-execute the build method whenever the data in mealsProvider change
+    final meals = ref.watch(mealsProvider);
+
+    final avaliableMeals = meals.where((meal) {
       if (_selectedFilters[Filter.gluetenFree]! && !meal.isGlutenFree) {
         return false;
       }
@@ -88,16 +71,15 @@ class _TabsScreen extends State<TabsScreen> {
     }).toList();
 
     Widget activePage = CategoriesScreen(
-      onToggleFavorite: _toggleMealFavoriteStatus,
       avaliableMeals: avaliableMeals,
     );
 
     var activePageTitle = 'Categoriers';
 
     if (selectedPageIndex == 1) {
+      final favoriteMeals = ref.watch(favoriteMealsProvider);
       activePage = MealsScreen(
-        meals: _favoriteMeals,
-        onToggleFavorite: _toggleMealFavoriteStatus,
+        meals: favoriteMeals,
       );
       activePageTitle = 'Your favorites';
     }
