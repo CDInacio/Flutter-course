@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:meals_app_with_app_wide_state/providers/favorites_provider.dart';
-import 'package:meals_app_with_app_wide_state/providers/meals_provider.dart';
+import 'package:meals_app_with_app_wide_state/providers/filters_provider.dart';
 import 'package:meals_app_with_app_wide_state/screens/categories.dart';
 import 'package:meals_app_with_app_wide_state/screens/filters.dart';
 import 'package:meals_app_with_app_wide_state/screens/meals.dart';
@@ -23,52 +23,22 @@ class TabsScreen extends ConsumerStatefulWidget {
 
 class _TabsScreen extends ConsumerState<TabsScreen> {
   int selectedPageIndex = 0;
-  Map<Filter, bool> _selectedFilters = kInitialFilters;
-
-  void _showInfoMessage(String message) {}
 
   void _selectPage(int index) {
     setState(() => selectedPageIndex = index);
   }
 
-  void _setScreen(String identifier) async {
+  void _setScreen(String identifier) {
     Navigator.of(context).pop();
     if (identifier == 'filters') {
-      // 'result' will only be avaliable when the user navigates back.
-      // defining wich kind of value will be returned by push
-      final result =
-          await Navigator.of(context).push<Map<Filter, bool>>(MaterialPageRoute(
-              builder: (ctx) => FiltersScreen(
-                    currentFilters: _selectedFilters,
-                  )));
-
-      setState(() {
-        // '??' checks if 'result' is null, if it is, '_selectedFilters' is assined to 'kInitialFilters'
-        _selectedFilters = result ?? kInitialFilters;
-      });
+      Navigator.of(context).push<Map<Filter, bool>>(
+          MaterialPageRoute(builder: (ctx) => const FiltersScreen()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // this listener will re-execute the build method whenever the data in mealsProvider change
-    final meals = ref.watch(mealsProvider);
-
-    final avaliableMeals = meals.where((meal) {
-      if (_selectedFilters[Filter.gluetenFree]! && !meal.isGlutenFree) {
-        return false;
-      }
-      if (_selectedFilters[Filter.lactoseFree]! && !meal.isLactoseFree) {
-        return false;
-      }
-      if (_selectedFilters[Filter.vegan]! && !meal.isVegan) {
-        return false;
-      }
-      if (_selectedFilters[Filter.vegetarian]! && !meal.isVegetarian) {
-        return false;
-      }
-      return true;
-    }).toList();
+    final avaliableMeals = ref.watch(filteredMealsProvider);
 
     Widget activePage = CategoriesScreen(
       avaliableMeals: avaliableMeals,
