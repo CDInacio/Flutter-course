@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:meals_app_with_app_wide_state/screens/tabs.dart';
 
@@ -12,7 +13,9 @@ final theme = ThemeData(
 );
 
 void main() {
-  runApp(const App());
+  // we have to wrap the app the the 'ProviderScope' to unlock the
+  // behind the scenes state management in the end
+  runApp(const ProviderScope(child: App()));
 }
 
 class App extends StatelessWidget {
